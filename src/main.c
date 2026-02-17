@@ -45,6 +45,20 @@ u32 ipv4_to_dec(const ipv4_t ip_addr) {
   return value;
 }
 
+ipv4_t dec_to_ipv4(u32 num) {
+  ipv4_t ip_addr = {0};
+
+  ip_addr.oct_3 = num & 0xFF;
+  num >>= 8;
+  ip_addr.oct_2 = num & 0xFF;
+  num >>= 8;
+  ip_addr.oct_1 = num & 0xFF;
+  num >>= 8;
+  ip_addr.oct_0 = num & 0xFF;
+
+  return ip_addr;
+}
+
 bool is_valid_ipv4(const ipv4_t ip_addr) {
   if (ip_addr.oct_0 < 0 || ip_addr.oct_0 > 255) {
     return false;
@@ -156,15 +170,15 @@ int main(int argc, char **argv) {
   u32 ipv4_dec = ipv4_to_dec(ip_addr);
   u32 ipv4_2_dec = ipv4_to_dec(ip_addr2);
   u32 subnet_dec = ipv4_to_dec(subnet_mask);
+  u32 masked_ipv4 = ipv4_dec & subnet_dec;
+  u32 masked_ipv4_2 = ipv4_2_dec & subnet_dec;
 
   if (flags & COMPARE) {
     // print comparation of 2 ip addresses and a subnet mask
-    u32 masked_address_1 = ipv4_dec & subnet_dec;
-    u32 masked_address_2 = ipv4_2_dec & subnet_dec;
-    if (masked_address_1 == masked_address_2) {
+    if (masked_ipv4 == masked_ipv4_2) {
       printf("the addresses are in the same subnet\n");
     } else {
-      printf("the belong to different subnets\n");
+      printf("the addresses belong to different subnets\n");
     }
     print_ipv4(ip_addr);
     print_ipv4_binary(ip_addr);
@@ -180,11 +194,13 @@ int main(int argc, char **argv) {
     print_ipv4_binary(subnet_mask);
     printf("/%u\n", count_ones_in_bin(subnet_dec));
     printf("available hosts: %u\n", ~subnet_dec + 1);
-
-    u32 masked_ipv4 = ipv4_dec & subnet_dec;
     printf("ipv4 masked with subnet-mask (&)\n");
     dec_to_bin(masked_ipv4, IPV4_BITS);
     printf("\n");
+    printf("Network Address\n");
+    print_ipv4(dec_to_ipv4(masked_ipv4));
+    printf("max address:\n");
+    print_ipv4(dec_to_ipv4(masked_ipv4 + ~subnet_dec));
   }
 	return 0;
 }
