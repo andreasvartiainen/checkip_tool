@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(c_project)
+project(checkip)
 
 enable_testing()
 
