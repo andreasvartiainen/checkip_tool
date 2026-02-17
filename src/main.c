@@ -158,6 +158,7 @@ int main(int argc, char **argv) {
   u32 subnet_dec = ipv4_to_dec(subnet_mask);
 
   if (flags & COMPARE) {
+    // print comparation of 2 ip addresses and a subnet mask
     u32 masked_address_1 = ipv4_dec & subnet_dec;
     u32 masked_address_2 = ipv4_2_dec & subnet_dec;
     if (masked_address_1 == masked_address_2) {
@@ -172,6 +173,7 @@ int main(int argc, char **argv) {
     print_ipv4(subnet_mask);
     print_ipv4_binary(subnet_mask);
   }else {
+    // print the information about ip address and subnet
     print_ipv4(ip_addr);
     print_ipv4_binary(ip_addr);
     print_ipv4(subnet_mask);
