@@ -6,6 +6,21 @@
 #include <stdio.h>
 
 #define IPV4_BITS 32
+#define BYTE 8 // byte == 8 bits
+#define BYTE_MASK 0xFF // mask where 1111 1111
+// flags for different modes 
+#define INTERACTIVE 1
+#define COMPARE 2
+#define WILDCARD 4
+u32 flags = {0};
+
+
+typedef struct ipv4_t {
+  u32 oct_0;
+  u32 oct_1;
+  u32 oct_2;
+  u32 oct_3;
+} ipv4_t;
 
 // print decimal as binary recursively (to make it right way around)
 void dec_to_bin(u32 num, u8 bits) {
@@ -21,23 +36,16 @@ void dec_to_bin(u32 num, u8 bits) {
 
 u32 bin_to_dec() { return 0; }
 
-typedef struct ipv4_t {
-  u32 oct_0;
-  u32 oct_1;
-  u32 oct_2;
-  u32 oct_3;
-} ipv4_t;
-
 u32 ipv4_to_dec(const ipv4_t ip_addr) {
   u32 value = 0;
 
   // bit shift and or to get the numbers
   value |= ip_addr.oct_0;
-  value <<= 8;
+  value <<= BYTE;
   value |= ip_addr.oct_1;
-  value <<= 8;
+  value <<= BYTE;
   value |= ip_addr.oct_2;
-  value <<= 8;
+  value <<= BYTE;
   value |= ip_addr.oct_3;
 
   return value;
@@ -46,28 +54,28 @@ u32 ipv4_to_dec(const ipv4_t ip_addr) {
 ipv4_t dec_to_ipv4(u32 num) {
   ipv4_t ip_addr = {0};
 
-  ip_addr.oct_3 = num & 0xFF;
-  num >>= 8;
-  ip_addr.oct_2 = num & 0xFF;
-  num >>= 8;
-  ip_addr.oct_1 = num & 0xFF;
-  num >>= 8;
-  ip_addr.oct_0 = num & 0xFF;
+  ip_addr.oct_3 = num & BYTE_MASK;
+  num >>= BYTE;
+  ip_addr.oct_2 = num & BYTE_MASK;
+  num >>= BYTE;
+  ip_addr.oct_1 = num & BYTE_MASK;
+  num >>= BYTE;
+  ip_addr.oct_0 = num & BYTE_MASK;
 
   return ip_addr;
 }
 
 bool is_valid_ipv4(const ipv4_t ip_addr) {
-  if (ip_addr.oct_0 < 0 || ip_addr.oct_0 > 255) {
+  if (ip_addr.oct_0 < 0 || ip_addr.oct_0 > BYTE_MASK) {
     return false;
   }
-  if (ip_addr.oct_1 < 0 || ip_addr.oct_1 > 255) {
+  if (ip_addr.oct_1 < 0 || ip_addr.oct_1 > BYTE_MASK) {
     return false;
   }
-  if (ip_addr.oct_2 < 0 || ip_addr.oct_2 > 255) {
+  if (ip_addr.oct_2 < 0 || ip_addr.oct_2 > BYTE_MASK) {
     return false;
   }
-  if (ip_addr.oct_3 < 0 || ip_addr.oct_3 > 255) {
+  if (ip_addr.oct_3 < 0 || ip_addr.oct_3 > BYTE_MASK) {
     return false;
   }
   return true;
@@ -120,10 +128,6 @@ u32 count_ones_in_bin(u32 num) {
   return count;
 }
 
-#define INTERACTIVE 1
-#define COMPARE 2
-u32 flags = {0};
-
 int main(int argc, char **argv) {
   // get options from commandline with getops library
   i8 opt = {0};
@@ -151,9 +155,14 @@ int main(int argc, char **argv) {
     ip_addr = get_ip_from_string(argv[1]);
     ip_addr2 = get_ip_from_string(argv[2]);
     subnet_mask = get_ip_from_string(argv[3]);
+  } else if (argc == 2) {
+    flags |= WILDCARD;
+    subnet_mask = get_ip_from_string(argv[1]);
+    printf("Wildcard Mode\n");
   } else {
     printf("no input provided\nusage:\n \
 -i flag to enter interactive mode\n \
+<subnet mask> to show the corresponding wildcard\n \
 <ip address> <subnet-mask> information about IP address and subnet combination\n \
 <ip address> <ip address> <subnet-mask> check if IPs are in the same subnet\n");
     return 0;
@@ -179,6 +188,14 @@ int main(int argc, char **argv) {
     print_ipv4_binary(ip_addr2);
     print_ipv4(subnet_mask);
     print_ipv4_binary(subnet_mask);
+  } else if (flags & WILDCARD){
+    ipv4_t wildcard = dec_to_ipv4(~subnet_dec);
+    printf("Subnet mask\n");
+    print_ipv4(subnet_mask);
+    print_ipv4_binary(subnet_mask);
+    printf("Wildcard \n");
+    print_ipv4(wildcard);
+    print_ipv4_binary(wildcard);
   } else {
     // print the information about ip address and subnet
     print_ipv4(ip_addr);
