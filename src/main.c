@@ -49,6 +49,7 @@ int main(int argc, char **argv) {
   } else {
     printf("no input provided\nusage:\n \
 -i flag to enter interactive mode\n \
+-s to show dotted-decimal notation version of /24 style subnetmask  \
 <subnet mask> to show the corresponding wildcard\n \
 <ip address> <subnet-mask> information about IP address and subnet combination\n \
 <ip address> <ip address> <subnet-mask> check if IPs are in the same subnet\n"
