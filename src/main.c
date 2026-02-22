@@ -4,213 +4,57 @@
 #include <getopt.h>
 #include <stdint.h>
 #include <stdio.h>
-
-#define IPV4_BITS 32
-#define BYTE 8 // byte == 8 bits
-#define BYTE_MASK 0xFF // mask where 1111 1111
-// flags for different modes 
-#define INTERACTIVE 1
-#define COMPARE 2
-#define WILDCARD 4
-u32 flags = {0};
-
-
-typedef struct ipv4_t {
-  u32 oct_0;
-  u32 oct_1;
-  u32 oct_2;
-  u32 oct_3;
-} ipv4_t;
-
-// print decimal as binary recursively (to make it right way around)
-void dec_to_bin(u32 num, u8 bits) {
-  if (bits == 0) {
-    return;
-  }
-  dec_to_bin(num >> 1, --bits);
-  if (bits % 4 == 0 && bits != 0) {
-    printf(" ");
-  }
-  printf("%u", num & 0x1);
-}
-
-u32 bin_to_dec() { return 0; }
-
-u32 ipv4_to_dec(const ipv4_t ip_addr) {
-  u32 value = 0;
-
-  // bit shift and or to get the numbers
-  value |= ip_addr.oct_0;
-  value <<= BYTE;
-  value |= ip_addr.oct_1;
-  value <<= BYTE;
-  value |= ip_addr.oct_2;
-  value <<= BYTE;
-  value |= ip_addr.oct_3;
-
-  return value;
-}
-
-ipv4_t dec_to_ipv4(u32 num) {
-  ipv4_t ip_addr = {0};
-
-  ip_addr.oct_3 = num & BYTE_MASK;
-  num >>= BYTE;
-  ip_addr.oct_2 = num & BYTE_MASK;
-  num >>= BYTE;
-  ip_addr.oct_1 = num & BYTE_MASK;
-  num >>= BYTE;
-  ip_addr.oct_0 = num & BYTE_MASK;
-
-  return ip_addr;
-}
-
-bool is_valid_ipv4(const ipv4_t ip_addr) {
-  if (ip_addr.oct_0 < 0 || ip_addr.oct_0 > BYTE_MASK) {
-    return false;
-  }
-  if (ip_addr.oct_1 < 0 || ip_addr.oct_1 > BYTE_MASK) {
-    return false;
-  }
-  if (ip_addr.oct_2 < 0 || ip_addr.oct_2 > BYTE_MASK) {
-    return false;
-  }
-  if (ip_addr.oct_3 < 0 || ip_addr.oct_3 > BYTE_MASK) {
-    return false;
-  }
-  return true;
-}
-
-ipv4_t get_ip_from_string(const char *string) {
-  ipv4_t ip_addr = {0};
-
-  assert(sscanf(string, "%u.%u.%u.%u", &ip_addr.oct_0, &ip_addr.oct_1,
-                &ip_addr.oct_2, &ip_addr.oct_3) == 4);
-
-  assert(is_valid_ipv4(ip_addr));
-
-  return ip_addr;
-}
-
-ipv4_t get_ip_from_input(const char *prompt) {
-  printf("%s", prompt);
-  char *line defer = nullptr;
-  size_t size = 0;
-  getline(&line, &size, stdin);
-  strip_newline(line);
-
-  ipv4_t ip_addr = get_ip_from_string(line);
-
-  return ip_addr;
-}
-
-void print_ipv4(const ipv4_t ip_addr) {
-  printf("%u.%u.%u.%u\n", ip_addr.oct_0, ip_addr.oct_1, ip_addr.oct_2,
-         ip_addr.oct_3);
-}
-
-void print_ipv4_binary(const ipv4_t ip_addr) {
-  u32 ipv4_dec = ipv4_to_dec(ip_addr); // ipv4 in decimal
-
-  // print the address in binary form
-  dec_to_bin(ipv4_dec, IPV4_BITS);
-  printf("\n");
-}
-
-u32 count_ones_in_bin(u32 num) {
-  u32 count = 0;
-  while (num > 0) {
-    if ((num & 1)) {
-      count++;
-    }
-    num >>= 1;
-  }
-  return count;
-}
+#include "ipv4.h"
 
 int main(int argc, char **argv) {
+  ipv4_t ip_addr = {0};
+  ipv4_t ip_addr2 = {0};
+  ipv4_t subnet_mask = {0};
+
   // get options from commandline with getops library
   i8 opt = {0};
-  while ((opt = (i8)getopt(argc, argv, "i")) > 0) {
+  while ((opt = (i8)getopt(argc, argv, "is")) > 0) {
     switch (opt) {
     case 'i':
       flags |= INTERACTIVE;
+      break;
+    case 's': // slash mode for ip subnet
+      flags |= SLASH;
       break;
     default:
     }
   }
 
-  ipv4_t ip_addr = {0};
-  ipv4_t ip_addr2 = {0};
-  ipv4_t subnet_mask = {0};
+  // printf("arguments: %d\n", argc);
 
   if (flags & INTERACTIVE) {
     ip_addr = get_ip_from_input("Give an IP address: ");
     subnet_mask = get_ip_from_input("Give a Subnet Mask: ");
-  } else if (argc == 3) {
-    ip_addr = get_ip_from_string(argv[1]);
-    subnet_mask = get_ip_from_string(argv[2]);
+    ipv4_info_print_all(ip_addr, subnet_mask);
+  } else if (flags & SLASH){
+    ipv4_t ipv4_subnet = subnet_from_slash_format(argv[2]);
+    print_ipv4(ipv4_subnet);
   } else if (argc == 4) {
-    flags |= COMPARE;
     ip_addr = get_ip_from_string(argv[1]);
     ip_addr2 = get_ip_from_string(argv[2]);
     subnet_mask = get_ip_from_string(argv[3]);
+    ipv4_print_compare_with_mask(ip_addr, ip_addr2, subnet_mask);
+  } else if (argc == 3) {
+    ip_addr = get_ip_from_string(argv[1]);
+    subnet_mask = get_ip_from_string(argv[2]);
+    ipv4_info_print_all(ip_addr, subnet_mask);
   } else if (argc == 2) {
-    flags |= WILDCARD;
     subnet_mask = get_ip_from_string(argv[1]);
-    printf("Wildcard Mode\n");
+    ipv4_info_print_subnet_mask(subnet_mask);
   } else {
     printf("no input provided\nusage:\n \
 -i flag to enter interactive mode\n \
 <subnet mask> to show the corresponding wildcard\n \
 <ip address> <subnet-mask> information about IP address and subnet combination\n \
-<ip address> <ip address> <subnet-mask> check if IPs are in the same subnet\n");
+<ip address> <ip address> <subnet-mask> check if IPs are in the same subnet\n"
+   );
     return 0;
   }
 
-  // convert the ip addresses to u32
-  u32 ipv4_dec = ipv4_to_dec(ip_addr);
-  u32 ipv4_2_dec = ipv4_to_dec(ip_addr2);
-  u32 subnet_dec = ipv4_to_dec(subnet_mask);
-  u32 masked_ipv4 = ipv4_dec & subnet_dec;
-  u32 masked_ipv4_2 = ipv4_2_dec & subnet_dec;
-
-  if (flags & COMPARE) {
-    // print comparation of 2 ip addresses and a subnet mask
-    if (masked_ipv4 == masked_ipv4_2) {
-      printf("the addresses are in the same subnet\n");
-    } else {
-      printf("the addresses belong to different subnets\n");
-    }
-    print_ipv4(ip_addr);
-    print_ipv4_binary(ip_addr);
-    print_ipv4(ip_addr2);
-    print_ipv4_binary(ip_addr2);
-    print_ipv4(subnet_mask);
-    print_ipv4_binary(subnet_mask);
-  } else if (flags & WILDCARD){
-    ipv4_t wildcard = dec_to_ipv4(~subnet_dec);
-    printf("Subnet mask\n");
-    print_ipv4(subnet_mask);
-    print_ipv4_binary(subnet_mask);
-    printf("Wildcard \n");
-    print_ipv4(wildcard);
-    print_ipv4_binary(wildcard);
-  } else {
-    // print the information about ip address and subnet
-    print_ipv4(ip_addr);
-    print_ipv4_binary(ip_addr);
-    print_ipv4(subnet_mask);
-    print_ipv4_binary(subnet_mask);
-    printf("/%u\n", count_ones_in_bin(subnet_dec));
-    printf("available hosts: %u\n", ~subnet_dec + 1);
-    printf("ipv4 masked with subnet-mask (&)\n");
-    dec_to_bin(masked_ipv4, IPV4_BITS);
-    printf("\n");
-    printf("Network Address\n");
-    print_ipv4(dec_to_ipv4(masked_ipv4));
-    printf("max address:\n");
-    print_ipv4(dec_to_ipv4(masked_ipv4 + ~subnet_dec));
-  }
   return 0;
 }

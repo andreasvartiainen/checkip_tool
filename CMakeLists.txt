@@ -67,3 +67,6 @@ include_directories(
 		# ClayMan/include
 )
 
+# way to copy the binary to the bin file
+install(TARGETS ${PROJECT_NAME} DESTINATION ~/.local/bin)
+
