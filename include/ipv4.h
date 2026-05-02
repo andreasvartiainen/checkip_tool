@@ -45,7 +45,6 @@ void reverse_string(char **str) {
 void reverse_string_pointers(char *str) {
   u64 len = strlen(str);
 
-  char tmp = str[0];
   char *end = &str[len-1];
 
   while (str < end) {
@@ -89,7 +88,7 @@ char *ipv4_to_string(const ipv4_t ip_0) {
   return str;
 }
 
-// print decimal as binary recursively (to make it right way around)
+// print decimal as binary recursively (to make it the right way around)
 void dec_to_bin(u32 num, u8 bits) {
   if (bits == 0) {
     return;
