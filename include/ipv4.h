@@ -42,6 +42,16 @@ void reverse_string(char **str) {
   *str = tmp;
 }
 
+void reverse_string_pointers(char *str) {
+  u64 len = strlen(str);
+
+  char tmp = str[0];
+  char *end = &str[len-1];
+
+  while (str < end) {
+  }
+}
+
 // convert a number into a string
 char *num_to_string(u32 num) {
   char *str = (char*)malloc(sizeof(char) * 32);
@@ -54,7 +64,7 @@ char *num_to_string(u32 num) {
   }
 
   while (num > 0 && index < 32) {
-    str[index] = (i8)(num % 10) + '0';
+    str[index] = (char)(i8)(num % 10) + '0';
     num /= 10;
     index++;
   }
@@ -225,6 +235,7 @@ void ipv4_info_print_all(ipv4_t ip_0, ipv4_t mask) {
     // print the information about ip address and subnet
     u32 ip_0_dec = ipv4_to_dec(ip_0);
     u32 mask_dec = ipv4_to_dec(mask);
+    u32 ip_network = ip_0_dec & mask_dec;
 
     printf("IP: %s\n", ipv4_to_string(ip_0));
     print_ipv4_binary(ip_0);
@@ -236,9 +247,9 @@ void ipv4_info_print_all(ipv4_t ip_0, ipv4_t mask) {
     dec_to_bin(ip_0_dec, IPV4_BITS);
     printf("\n");
     printf("Network Address\n");
-    print_ipv4(dec_to_ipv4(ip_0_dec));
+    print_ipv4(dec_to_ipv4(ip_network));
     printf("max address:\n");
-    print_ipv4(dec_to_ipv4(ip_0_dec + ~mask_dec));
+    print_ipv4(dec_to_ipv4(ip_network + ~mask_dec));
 }
 
 void ipv4_info_print_subnet_mask(ipv4_t mask) {
